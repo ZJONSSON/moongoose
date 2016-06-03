@@ -1,4 +1,5 @@
 ![moongoose](https://i.kinja-img.com/gawker-media/image/upload/s--wbCHfA3R--/c_fit,fl_progressive,q_80,w_636/17hnwnvcypnk6jpg.jpg)
+
 Q: Why do people use mongoose?
 
 Here are some of the benefits:
