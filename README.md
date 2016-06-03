@@ -16,31 +16,76 @@ However, there are some potential downsides:
 
 Moongoose to the rescue
 
-* Around 100 LOC - simple wrapper around native
+* Just over 100 LOC - simple wrapper around native
 * No need to wait for connection before executing commands
 * Efficient `populate` for streaming and findOnes
 * Validation with JSON schema
 * Acts global but can be cloned for ringfencing different instances
 
-Example: find a record
+### Examples
+
+#### Example: fetching data
 
 ```js
 var moongoose = require('moongoose');
 
 moongoose.connect('mongodb://localhost:27017/test');
 
+// Find one record and populate
 moongoose.collection('test')
   .findOne({})
   .populate('org_id','orgs')
   .then(console.log);
-```
 
-Same example streaming:
-
-```js
-mongoose.collection('test')
+// Find all record, populate and stream
+moongoose.collection('test')
   .find()
   .populate('org_id','orgs')
   .stream()
   .pipe(...);
+
+// Find all records, poopulate and capture into array
+moongoose.collection('test')
+  .find()
+  .populate('org_id','orgs')
+  .toArray()
+  .then(console.log)
+```
+
+#### Example: save a record with validation
+
+```js
+var test = moongoose.collection('test',{
+  schema: {
+    additionalProperties: false,
+    properties: {
+      answer: {type:'boolean'},
+      fail: {type:'boolean'}
+    }
+  },
+  validate : function(data) {
+    if (data.fail)
+      throw 'Failed custom validation';
+  }
+});
+
+// This successfully save the record - junk is removed in validation
+test.save({
+  answer: true,
+  junk: 'this gets removed'
+})
+.then(d => console.log(d.ops[0]),console.log);
+
+// This fails validation and is not saved
+test.save({
+  answer: 'not a boolean'
+})
+.then(d => console.log(d.ops[0]),console.log);
+
+// This passes json-schema validation but fails custom validation
+test.save({
+  answer: true,
+  fail: true
+})
+.then(d => console.log(d.ops[0]),console.log);
 ```

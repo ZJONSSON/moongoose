@@ -8,7 +8,7 @@ var Promise = require('bluebird'),
 function cursor(action,__populate) {
   function next(key) {
     return function() {
-      return action.then(cur => cur[key].apply(c,arguments));
+      return action.then(cur => cur[key].apply(cur,arguments));
     };
   }
 
@@ -52,8 +52,19 @@ function populate(defs) {
 
 // Creates a lazy collection that executes methods when connected
 function collection(col,options) {
+  options = options || {};
   var c = this.__connected.promise.then(db => db.collection(col)),
-      self = this;
+      self = this,
+      validate;
+
+  if (options.schema) {
+    var ajv = require('ajv')(options.ajv_options || {removeAdditional:true});
+    validate = function(doc) {   
+      if (!ajv.validate(options.schema,doc))
+        return Promise.reject(ajv.errors);
+      return doc;
+    };
+  }
 
   function then(key) {
     return function() {
@@ -79,8 +90,23 @@ function collection(col,options) {
     return p;
   },{});
 
-  obj.__populate = [];
 
+  // Modify save and insert to perform validation before executing
+  ['save','insert'].forEach(key => {
+    var fn = obj[key];
+    obj[key] = function(doc,o) {
+      var _id = doc._id;  // Keep the id (if exists) in case it gets stripped out in validation
+      return Promise.resolve(validate && validate(doc))
+        // optional extra validation
+        .then(typeof options.validate === 'function' && options.validate)
+        // and finally upsert
+        .then( () => {
+          doc._id = _id;
+          return fn.call(obj,doc,o);
+        });
+    };
+  });
+  
   return obj;
 }
 
