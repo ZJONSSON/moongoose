@@ -18,7 +18,7 @@ function cursor(action,__populate) {
   },{});
 
   obj.stream = function() {
-    var s = streamz(populate(__populate));
+    var s = streamz(populate(__populate),{concurrency: 10});
     action.then(cur => cur.pipe(s));
     return s;
   };
@@ -42,7 +42,7 @@ function cursor(action,__populate) {
 // Populates incoming data based on __populate definitions
 function populate(defs) {
   return function(d) {
-    if (!defs || !defs.length) return d;
+    if (!d || !defs || !defs.length) return d;
     defs.forEach(p => {
       d[p.field] = p.collection.findOne({_id:d[p.field]},p.select);
     });
