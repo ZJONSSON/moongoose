@@ -23,7 +23,18 @@ function cursor(action,__populate) {
     return s;
   };
 
-  obj.pipe = d => action.then(cur => cur.pipe(d)) && d;
+  obj.pipe = d => obj.stream().pipe(d) && d;
+
+  obj.toArray = function() {
+    return new Promise(function(resolve,reject) {
+      var data = [];
+      obj.stream()
+        .on('error',reject)
+        .pipe(streamz(d => data.push(d)))
+        .on('error',reject)
+        .on('finish', () => resolve(data));
+    });
+  };
 
   return obj;
 }
