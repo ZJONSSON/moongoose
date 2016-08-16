@@ -59,7 +59,7 @@ function collection(col,options) {
 
   if (options.schema) {
     var ajv = require('ajv')(options.ajv_options || {removeAdditional:true});
-    validate = function(doc) {   
+    validate = function(doc) {
       if (!ajv.validate(options.schema,doc))
         return Promise.reject(ajv.errors);
       return doc;
@@ -106,7 +106,7 @@ function collection(col,options) {
         });
     };
   });
-  
+
   return obj;
 }
 
@@ -114,7 +114,7 @@ function moongoose() {
  return  Object.create({
     collection : function(col,options) {
       if (this.__collections[col]) {
-        if (options) 
+        if (options)
           throw new Error('Options already set');
         return this.__collections[col];
       }
@@ -125,7 +125,10 @@ function moongoose() {
     connect : function() {
       var mongodb = this.mongodb || require('mongodb');
       return mongodb.connect.apply(mongodb,arguments)
-        .then(db => this.__connected.resolve(db));
+        .then(db => {
+          this.__connected.resolve(db);
+          return this.__connected.promise;
+        })
     },
     clone : moongoose
   },{
