@@ -110,8 +110,10 @@ function collection(col,options) {
   return obj;
 }
 
-function moongoose() {
- return  Object.create({
+function moongoose(mongodb) {
+  mongodb = mongodb || require('mongodb');
+  
+  return  Object.create({
     collection : function(col,options) {
       if (this.__collections[col]) {
         if (options)
@@ -123,12 +125,11 @@ function moongoose() {
       return obj;
     },
     connect : function() {
-      var mongodb = this.mongodb || require('mongodb');
       return mongodb.connect.apply(mongodb,arguments)
         .then(db => {
           this.__connected.resolve(db);
           return this.__connected.promise;
-        })
+        });
     },
     clone : moongoose
   },{
